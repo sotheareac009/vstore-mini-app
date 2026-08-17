@@ -1,6 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import { Play } from "next/font/google";
 import "./globals.css";
+
+/* next/font self-hosts the files at build time — no runtime request to
+   Google, and no layout shift from a late-arriving webfont.
+   Play ships only 400 and 700. */
+const play = Play({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  display: "swap",
+  variable: "--font-play",
+});
 import { CartProvider } from "@/components/CartProvider";
 import TelegramProvider from "@/components/TelegramProvider";
 import CartBar from "@/components/CartBar";
@@ -28,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     /* telegram-web-app.js writes --tg-viewport-* onto <html> before React
        hydrates, so the server and client markup legitimately differ here. */
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={play.variable} suppressHydrationWarning>
       <body className="min-h-screen">
         {/* beforeInteractive so window.Telegram exists on first render. It
             lives in <body> because a <script> may not be a direct child of
