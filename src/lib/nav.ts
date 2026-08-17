@@ -22,7 +22,7 @@ export const NAV_SECTIONS: NavSection[] = [
   { label: "PC Parts", slug: "component", icon: "chip" },
   { label: "Gaming", slug: "gaming-gear", icon: "gamepad" },
   { label: "Network", slug: "network", icon: "wifi" },
-  { label: "Used", slug: "used-product", icon: "tag" },
+  { label: "Used Product", slug: "used-product", icon: "tag" },
 ];
 
 export function sectionForSlug(slug: string | undefined): NavSection | undefined {

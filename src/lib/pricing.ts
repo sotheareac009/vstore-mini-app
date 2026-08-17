@@ -20,8 +20,15 @@ const STORE_URL = (process.env.WC_STORE_URL ?? "").replace(/\/$/, "");
 const KEY = process.env.WC_CONSUMER_KEY ?? "";
 const SECRET = process.env.WC_CONSUMER_SECRET ?? "";
 
-/** Long enough to cover a browsing session, short enough to pick up edits. */
-const TTL_MS = 90_000;
+/**
+ * How long a fetched price is reused, in seconds.
+ *
+ * This is the delay between changing a promotion in WordPress and seeing it in
+ * the app — the website has no such cache, so it always updates instantly.
+ * Lower it to make edits show up sooner at the cost of more calls to
+ * WooCommerce; set it to 0 to fetch on every request while testing promos.
+ */
+const TTL_MS = Math.max(0, Number(process.env.WC_PRICE_TTL_SECONDS ?? 60)) * 1000;
 
 /** WooCommerce caps `per_page` at 100. */
 const BATCH = 100;

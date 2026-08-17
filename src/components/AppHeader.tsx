@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "./CartProvider";
 import { BagIcon } from "./icons";
@@ -9,13 +10,26 @@ export default function AppHeader({ subtitle }: { subtitle?: string }) {
 
   return (
     <header className="flex items-start justify-between gap-3 px-4 pb-3 pt-5">
-      <div className="min-w-0">
-        <h1 className="text-[26px] font-bold leading-none tracking-[-0.03em]">
-          {process.env.NEXT_PUBLIC_STORE_NAME ?? "VStore"}
-        </h1>
-        {subtitle && (
-          <p className="mt-1.5 text-[13px] leading-tight text-tg-hint">{subtitle}</p>
-        )}
+      <div className="flex min-w-0 items-center gap-2.5">
+        {/* The source file is 512x512; next/image serves it down to the size
+            actually used so the 430KB original never reaches the phone. */}
+        <Image
+          src="/assets/vstore_logo.png"
+          alt=""
+          width={40}
+          height={40}
+          priority
+          className="h-10 w-10 shrink-0 rounded-xl object-contain"
+        />
+
+        <div className="min-w-0">
+          <h1 className="truncate text-[26px] font-bold leading-none tracking-[-0.03em]">
+            {process.env.NEXT_PUBLIC_STORE_NAME ?? "VStore"}
+          </h1>
+          {subtitle && (
+            <p className="mt-1.5 text-[13px] leading-tight text-tg-hint">{subtitle}</p>
+          )}
+        </div>
       </div>
 
       <Link

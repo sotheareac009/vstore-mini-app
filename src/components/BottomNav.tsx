@@ -131,8 +131,12 @@ export default function BottomNav() {
                   >
                     <Icon className="h-5.25 w-5.25" />
                   </span>
+                  {/* "Used Product" is twice the length of the other labels;
+                      nowrap + tight tracking keeps all five on one line. */}
                   <span
-                    className={`text-[10.5px] leading-none ${active ? "font-bold" : "font-semibold"}`}
+                    className={`w-full truncate text-center text-[10px] leading-none tracking-tight ${
+                      active ? "font-bold" : "font-semibold"
+                    }`}
                   >
                     {section.label}
                   </span>
