@@ -1,6 +1,15 @@
 import "server-only";
 import { P, query } from "./db";
-import type { Category, Crumb, Product, ProductDetail, ProductPage, Sort } from "./types";
+import type {
+  Category,
+  Crumb,
+  DescriptionBlock,
+  Product,
+  ProductDetail,
+  ProductPage,
+  Sort,
+  Spec,
+} from "./types";
 import { SORTS } from "./types";
 
 import { UPLOADS_BASE } from "./images";
@@ -11,6 +20,122 @@ function imageUrl(path: string | null | undefined): string | null {
   // survives characters like ?, # and spaces as well as non-ASCII.
   const encoded = path.split("/").map(encodeURIComponent).join("/");
   return `${UPLOADS_BASE}/${encoded}`;
+}
+
+/**
+ * Splits description HTML into lines.
+ *
+ * Descriptions here are tables of one-line cells, so every block boundary has
+ * to become a newline before the tags go — otherwise the whole thing collapses
+ * into a single run-on string.
+ */
+function descriptionLines(html: string): string[] {
+  return html
+    // Opening <li> becomes a bullet marker so genuine HTML lists are treated
+    // the same as the store's hand-written "-item" lines.
+    .replace(/<\s*li[^>]*>/gi, "\n• ")
+    .replace(/<\s*(br|\/p|\/div|\/li|\/td|\/tr|\/h[1-6])[^>]*>/gi, "\n")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&#8211;/g, "-")
+    .replace(/&quot;/g, '"')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+/**
+ * `CPU: Snapdragon x2 Elite` → { label, value }. The value is allowed to be
+ * empty so callers can recognise and drop blank rows like `GPU:` rather than
+ * having them fall through and be treated as prose.
+ */
+const SPEC_LINE = /^([A-Za-z][A-Za-z0-9 /.+-]{1,22}?)\s*[:：]\s*(.*)$/;
+
+/**
+ * Pulls "CPU: Intel Core Ultra 9" style lines out of a product description,
+ * for the compact spec list on a product card.
+ *
+ * The store keeps specs in the description rather than as WooCommerce
+ * attributes — its laptops have no attributes, no SKU and no short
+ * description, so this is the only structured detail available.
+ */
+function parseSpecs(html: string | null | undefined, limit = 5): Spec[] {
+  if (!html) return [];
+
+  const lines = descriptionLines(html);
+  const specs: Spec[] = [];
+  const seen = new Set<string>();
+
+  for (const line of lines) {
+    const match = SPEC_LINE.exec(line);
+    if (!match) continue;
+
+    const [, label, value] = match;
+    const key = label.toLowerCase();
+    if (!value || seen.has(key)) continue;
+
+    seen.add(key);
+    specs.push({ label, value: value.slice(0, 60) });
+    if (specs.length >= limit) break;
+  }
+
+  return specs;
+}
+
+/**
+ * Structures a description for the product page.
+ *
+ * The store's own conventions carry the formatting: `Label: value` rows are a
+ * spec table, `+Section` starts a heading, `-item` is a bullet. Anything else
+ * is a paragraph. Consecutive lines of the same kind are grouped so they
+ * render as one table or one list.
+ */
+function parseDescription(html: string | null | undefined): DescriptionBlock[] {
+  if (!html) return [];
+
+  const blocks: DescriptionBlock[] = [];
+
+  /** Append to the trailing block when it matches, otherwise start a new one. */
+  const push = (block: DescriptionBlock) => {
+    const last = blocks[blocks.length - 1];
+    if (last?.type === "specs" && block.type === "specs") {
+      last.items.push(...block.items);
+    } else if (last?.type === "list" && block.type === "list") {
+      last.items.push(...block.items);
+    } else {
+      blocks.push(block);
+    }
+  };
+
+  for (const line of descriptionLines(html)) {
+    const bullet = /^[-–—•*]\s*(.+)$/.exec(line);
+    if (bullet) {
+      push({ type: "list", items: [bullet[1].trim()] });
+      continue;
+    }
+
+    if (line.startsWith("+")) {
+      const text = line.slice(1).trim();
+      if (text) blocks.push({ type: "heading", text });
+      continue;
+    }
+
+    const spec = SPEC_LINE.exec(line);
+    if (spec) {
+      // "GPU:" with nothing after it is a blank row in the source table.
+      // Dropping it keeps the surrounding specs as one continuous table
+      // instead of splitting them around a stray paragraph.
+      if (spec[2]?.trim()) {
+        push({ type: "specs", items: [{ label: spec[1], value: spec[2].trim() }] });
+      }
+      continue;
+    }
+
+    blocks.push({ type: "text", text: line });
+  }
+
+  return blocks;
 }
 
 function stripHtml(html: string | null | undefined): string {
@@ -38,6 +163,7 @@ type ProductRow = {
   totalSales: number | null;
   imgPath: string | null;
   excerpt: string | null;
+  description: string | null;
 };
 
 function toProduct(r: ProductRow): Product {
@@ -57,16 +183,20 @@ function toProduct(r: ProductRow): Product {
     totalSales: Number(r.totalSales ?? 0),
     image: imageUrl(r.imgPath),
     excerpt: stripHtml(r.excerpt).slice(0, 180),
+    specs: parseSpecs(r.description),
   };
 }
 
 /**
  * Columns + joins shared by the list and detail queries.
- * `extra` adds columns only the detail view needs (post_content is large).
+ *
+ * post_content comes along even in the list: the card shows the CPU/RAM/GPU
+ * lines, which only exist in the description. It is parsed down to a handful
+ * of specs on the server, so the extra weight never reaches the browser.
  */
-const selectProduct = (extra = "") => `
+const selectProduct = () => `
   SELECT
-    ${extra}
+    p.post_content    AS description,
     p.ID              AS id,
     p.post_title      AS name,
     p.post_name       AS slug,
@@ -157,8 +287,8 @@ export async function listProducts(opts: ListOptions = {}): Promise<ProductPage>
 }
 
 export async function getProduct(id: number): Promise<ProductDetail | null> {
-  const [row] = await query<ProductRow & { description: string | null }>(
-    `${selectProduct("p.post_content AS description,")}
+  const [row] = await query<ProductRow>(
+    `${selectProduct()}
      WHERE p.ID = ? AND p.post_type = 'product' AND p.post_status = 'publish'
      LIMIT 1`,
     [id],
@@ -203,6 +333,7 @@ export async function getProduct(id: number): Promise<ProductDetail | null> {
   return {
     ...base,
     description: stripHtml(row.description),
+    blocks: parseDescription(row.description),
     gallery: base.image ? [base.image, ...gallery] : gallery,
     categories: categories.map((c) => ({ ...c, id: Number(c.id) })),
   };

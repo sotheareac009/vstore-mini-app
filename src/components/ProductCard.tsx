@@ -64,6 +64,21 @@ export default function ProductCard({ product }: { product: Product }) {
           {product.name}
         </Link>
 
+        {/* Specs come from the description, so plenty of products have none —
+            the row simply disappears rather than leaving a gap. */}
+        {product.specs.length > 0 && (
+          <dl className="space-y-0.5 border-t border-hairline pt-1.5 text-[11px] leading-[1.35]">
+            {product.specs.map((spec) => (
+              <div key={spec.label} className="flex gap-1.5">
+                <dt className="shrink-0 text-tg-hint">{spec.label}</dt>
+                <dd className="min-w-0 flex-1 truncate text-right font-medium text-tg-text/85">
+                  {spec.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
+
         <div className="mt-auto flex items-end justify-between gap-2 pt-0.5">
           <div className="min-w-0">
             <p className="numeric truncate text-[15px] font-semibold leading-tight">

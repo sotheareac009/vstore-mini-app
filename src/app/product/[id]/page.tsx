@@ -104,15 +104,58 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         </section>
       )}
 
-      {product.description && (
+      {product.blocks.length > 0 && (
         <section className="px-4 pb-6">
           <h2 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-tg-hint">
-            Description
+            Details
           </h2>
-          <div className="rounded-card border border-hairline bg-surface p-4 shadow-sm">
-            <p className="whitespace-pre-line text-[14px] leading-[1.65] text-tg-text/85">
-              {product.description}
-            </p>
+          <div className="space-y-4 rounded-card border border-hairline bg-surface p-4 shadow-sm">
+            {product.blocks.map((block, i) => {
+              if (block.type === "specs") {
+                return (
+                  <dl
+                    key={i}
+                    className="divide-y divide-hairline overflow-hidden rounded-xl bg-sunken"
+                  >
+                    {block.items.map((spec) => (
+                      <div key={spec.label} className="flex gap-3 px-3 py-2.5">
+                        <dt className="w-28 shrink-0 text-[12.5px] text-tg-hint">{spec.label}</dt>
+                        <dd className="min-w-0 flex-1 text-[13.5px] font-medium leading-[1.45]">
+                          {spec.value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                );
+              }
+
+              if (block.type === "heading") {
+                return (
+                  <h3 key={i} className="text-[13px] font-bold text-brand-ink">
+                    {block.text}
+                  </h3>
+                );
+              }
+
+              if (block.type === "list") {
+                return (
+                  <ul key={i} className="space-y-1.5">
+                    {block.items.map((item, j) => (
+                      <li key={j} className="flex gap-2 text-[13.5px] leading-[1.55]">
+                        <span aria-hidden="true" className="mt-1.75 h-1 w-1 shrink-0 rounded-full bg-brand" />
+                        <span className="text-tg-text/85">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              }
+
+              return (
+                <p key={i} className="text-[13.5px] leading-[1.65] text-tg-text/85">
+                  {block.text}
+                </p>
+              );
+            })}
           </div>
         </section>
       )}

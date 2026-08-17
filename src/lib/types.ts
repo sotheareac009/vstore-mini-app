@@ -1,3 +1,17 @@
+/** One "CPU: Intel Core Ultra 9" line pulled out of a product description. */
+export type Spec = { label: string; value: string };
+
+/**
+ * A product description broken into renderable pieces. The store writes them
+ * as tables of `Label: value` rows, `+Section` headings and `-bullet` lines,
+ * which read as one run-on paragraph unless they're structured first.
+ */
+export type DescriptionBlock =
+  | { type: "specs"; items: Spec[] }
+  | { type: "heading"; text: string }
+  | { type: "list"; items: string[] }
+  | { type: "text"; text: string };
+
 export type Product = {
   id: number;
   name: string;
@@ -12,10 +26,14 @@ export type Product = {
   totalSales: number;
   image: string | null;
   excerpt: string;
+  /** Key specs for the card, parsed from the description. May be empty. */
+  specs: Spec[];
 };
 
 export type ProductDetail = Product & {
   description: string;
+  /** The same description, structured for display. */
+  blocks: DescriptionBlock[];
   gallery: string[];
   categories: { id: number; name: string; slug: string }[];
 };
