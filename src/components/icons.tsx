@@ -157,3 +157,12 @@ export function TagIcon({ className = "h-5 w-5" }: IconProps) {
     </svg>
   );
 }
+
+export function SendIcon({ className = "h-4 w-4" }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <path d="M21.5 3.5 2.5 10.2a.6.6 0 0 0 .05 1.13l4.6 1.52 1.52 4.6a.6.6 0 0 0 1.13.05Z" />
+      <path d="m21.5 3.5-14.35 9.35" />
+    </svg>
+  );
+}

@@ -5,7 +5,9 @@ import type { Product } from "@/lib/types";
 import { money } from "@/lib/format";
 import { useCart } from "./CartProvider";
 import ProductImage from "./ProductImage";
-import { MinusIcon, PlusIcon } from "./icons";
+import { stockEnquiryLink } from "@/lib/order-message";
+import { openChat } from "@/lib/telegram";
+import { MinusIcon, PlusIcon, SendIcon } from "./icons";
 
 export default function ProductCard({ product }: { product: Product }) {
   const { add, setQty, qtyOf } = useCart();
@@ -14,6 +16,17 @@ export default function ProductCard({ product }: { product: Product }) {
     product.regularPrice && product.regularPrice > product.price
       ? Math.round((1 - product.price / product.regularPrice) * 100)
       : 0;
+
+  // Sold-out items can't be ordered, so the card offers the seller instead —
+  // same action as the product page, reachable without opening it.
+  const enquiryLink = product.inStock
+    ? null
+    : stockEnquiryLink({
+        name: product.name,
+        slug: product.slug,
+        sku: product.sku,
+        price: money(product.price),
+      });
 
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-card border border-hairline bg-surface shadow-card">
@@ -63,13 +76,23 @@ export default function ProductCard({ product }: { product: Product }) {
             )}
           </div>
 
-          {qty === 0 ? (
+          {!product.inStock ? (
+            <button
+              type="button"
+              onClick={() => enquiryLink && openChat(enquiryLink)}
+              disabled={!enquiryLink}
+              aria-label={`Contact the seller about ${product.name}`}
+              title="Contact seller"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-brand-fg shadow-brand transition active:scale-90 disabled:bg-sunken disabled:text-tg-hint disabled:shadow-none"
+            >
+              <SendIcon className="h-3.75 w-3.75" />
+            </button>
+          ) : qty === 0 ? (
             <button
               type="button"
               onClick={() => add(product)}
-              disabled={!product.inStock}
               aria-label={`Add ${product.name} to cart`}
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-brand-fg shadow-brand transition active:scale-90 disabled:bg-sunken disabled:text-tg-hint disabled:shadow-none"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-brand-fg shadow-brand transition active:scale-90"
             >
               <PlusIcon className="h-3.75 w-3.75" />
             </button>

@@ -6,7 +6,8 @@ import ProductImage from "@/components/ProductImage";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useCart } from "@/components/CartProvider";
 import { money } from "@/lib/format";
-import CheckoutForm, { openChat, type Placed } from "@/components/CheckoutForm";
+import CheckoutForm, { type Placed } from "@/components/CheckoutForm";
+import { openChat } from "@/lib/telegram";
 import { SHOP_USERNAME } from "@/lib/order-message";
 import { BagIcon, MinusIcon, PlusIcon, TrashIcon } from "@/components/icons";
 

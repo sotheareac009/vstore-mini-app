@@ -94,6 +94,20 @@ export function supports(min: string): boolean {
   return true;
 }
 
+/**
+ * Opens a t.me link. Inside Telegram this closes the mini app and lands the
+ * user in the conversation; in a browser a same-tab navigation is used because
+ * a popup opened after an await is usually blocked.
+ */
+export function openChat(link: string) {
+  const app = tg();
+  if (app && inTelegram() && typeof app.openTelegramLink === "function") {
+    app.openTelegramLink(link);
+    return;
+  }
+  window.location.href = link;
+}
+
 export function haptic(style: "light" | "medium" | "heavy" = "light") {
   // HapticFeedback landed in 6.1 alongside BackButton.
   if (!supports("6.1")) return;

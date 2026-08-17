@@ -181,6 +181,7 @@ export function envStatus(): { key: string; set: boolean }[] {
     "WC_CONSUMER_KEY",
     "WC_CONSUMER_SECRET",
     "NEXT_PUBLIC_TELEGRAM_SHOP",
+    "NEXT_PUBLIC_STORE_URL",
   ].map((key) => ({
     key,
     set: Boolean(process.env[key]?.trim()),

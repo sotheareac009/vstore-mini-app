@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useCart } from "./CartProvider";
 import { money } from "@/lib/format";
 import { orderMessage, shopChatLink } from "@/lib/order-message";
-import { inTelegram, tg } from "@/lib/telegram";
+import { inTelegram, openChat, tg } from "@/lib/telegram";
 import {
   FULFILMENTS,
   FULFILMENT_LABEL,
@@ -252,16 +252,3 @@ function BrowserBar({
   );
 }
 
-/**
- * Opens the shop chat. Inside Telegram this closes the mini app and lands the
- * buyer in the conversation; in a browser a same-tab navigation is used
- * because a popup opened after an await is usually blocked.
- */
-export function openChat(link: string) {
-  const app = tg();
-  if (app && inTelegram() && typeof app.openTelegramLink === "function") {
-    app.openTelegramLink(link);
-    return;
-  }
-  window.location.href = link;
-}

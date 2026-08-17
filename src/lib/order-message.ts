@@ -42,4 +42,47 @@ export function shopChatLink(message: string): string | null {
   return `https://t.me/${SHOP_USER}?text=${encodeURIComponent(message)}`;
 }
 
+/** Public storefront, for links the seller can open outside the mini app. */
+const STORE_SITE = (process.env.NEXT_PUBLIC_STORE_URL ?? "https://vstorecenter.com").replace(
+  /\/$/,
+  "",
+);
+
+/** Public product page on the WooCommerce site. */
+export function productLink(slug: string): string {
+  return `${STORE_SITE}/product/${slug}/`;
+}
+
+/**
+ * Enquiry sent when a product is sold out. The link is included so the seller
+ * can open the exact item rather than working it out from the name.
+ */
+export type EnquiryProduct = {
+  name: string;
+  slug: string;
+  sku: string | null;
+  /** Already formatted for display, e.g. "$29.00". */
+  price: string;
+};
+
+/** Chat link for a sold-out product, or null when no shop account is set. */
+export function stockEnquiryLink(product: EnquiryProduct): string | null {
+  return shopChatLink(stockEnquiryMessage(product));
+}
+
+export function stockEnquiryMessage(product: EnquiryProduct): string {
+  return [
+    "Hello 👋 I'm interested in this product, but it shows as out of stock.",
+    RULE,
+    `🛍 ${product.name}`,
+    ...(product.sku ? [`🔖 SKU: ${product.sku}`] : []),
+    `💰 ${product.price}`,
+    `🔗 ${productLink(product.slug)}`,
+    RULE,
+    `🏬 ${STORE_NAME}`,
+    RULE,
+    "Could you let me know when it will be back in stock? 🙏",
+  ].join("\n");
+}
+
 export const SHOP_USERNAME = SHOP_USER;
