@@ -13,6 +13,7 @@ import type {
 import { SORTS } from "./types";
 
 import { UPLOADS_BASE } from "./images";
+import { withLivePrices } from "./pricing";
 
 function imageUrl(path: string | null | undefined): string | null {
   if (!path) return null;
@@ -278,7 +279,8 @@ export async function listProducts(opts: ListOptions = {}): Promise<ProductPage>
 
   const total = Number(countRow?.total ?? 0);
   return {
-    items: rows.map(toProduct),
+    // Prices come from WooCommerce so runtime promotions are reflected.
+    items: await withLivePrices(rows.map(toProduct)),
     total,
     page,
     perPage,
@@ -329,7 +331,7 @@ export async function getProduct(id: number): Promise<ProductDetail | null> {
     [id],
   );
 
-  const base = toProduct(row);
+  const [base] = await withLivePrices([toProduct(row)]);
   return {
     ...base,
     description: stripHtml(row.description),
