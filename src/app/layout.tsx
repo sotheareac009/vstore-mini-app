@@ -40,7 +40,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     /* telegram-web-app.js writes --tg-viewport-* onto <html> before React
        hydrates, so the server and client markup legitimately differ here. */
     <html lang="en" className={play.variable} suppressHydrationWarning>
-      <body className="min-h-screen">
+      {/* suppressHydrationWarning only covers one level, so <body> needs its
+          own: extensions like Grammarly add data-gr-* attributes here before
+          React hydrates. */}
+      <body className="min-h-screen" suppressHydrationWarning>
         {/* beforeInteractive so window.Telegram exists on first render. It
             lives in <body> because a <script> may not be a direct child of
             <html>; Next hoists it into the document head when rendering. */}

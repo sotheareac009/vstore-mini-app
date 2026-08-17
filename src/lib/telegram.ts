@@ -9,6 +9,10 @@ export type TelegramWebApp = {
   initDataUnsafe: {
     user?: { id: number; first_name: string; last_name?: string; username?: string };
   };
+  /** Bot API version the host client implements, e.g. "6.0" or "7.10". */
+  version: string;
+  /** Present since 6.0, but feature-detected anyway — see `supports`. */
+  isVersionAtLeast?: (version: string) => boolean;
   colorScheme: "light" | "dark";
   themeParams: Record<string, string>;
   sendData: (data: string) => void;
@@ -17,6 +21,7 @@ export type TelegramWebApp = {
     impactOccurred: (style: "light" | "medium" | "heavy") => void;
     notificationOccurred: (type: "error" | "success" | "warning") => void;
   };
+  /** Requires Bot API 6.1 — guard with `supports("6.1")` before touching. */
   BackButton: {
     show: () => void;
     hide: () => void;
@@ -50,6 +55,31 @@ export function tg(): TelegramWebApp | null {
   return window.Telegram?.WebApp ?? null;
 }
 
+/**
+ * Whether the host client implements at least `min` of the Bot API.
+ *
+ * Calling a newer method on an older client isn't an error — the SDK just
+ * logs "[Telegram.WebApp] X is not supported in version 6.0" and does
+ * nothing — so anything above 6.0 has to be gated to keep the console clean
+ * and to let us fall back to in-app UI.
+ */
+export function supports(min: string): boolean {
+  const app = tg();
+  if (!app) return false;
+  if (typeof app.isVersionAtLeast === "function") return app.isVersionAtLeast(min);
+
+  // Older clients without the helper: compare the dotted version ourselves.
+  const parse = (v: string) => v.split(".").map((n) => Number(n) || 0);
+  const [have, want] = [parse(app.version ?? "6.0"), parse(min)];
+  for (let i = 0; i < Math.max(have.length, want.length); i++) {
+    const diff = (have[i] ?? 0) - (want[i] ?? 0);
+    if (diff !== 0) return diff > 0;
+  }
+  return true;
+}
+
 export function haptic(style: "light" | "medium" | "heavy" = "light") {
+  // HapticFeedback landed in 6.1 alongside BackButton.
+  if (!supports("6.1")) return;
   tg()?.HapticFeedback?.impactOccurred(style);
 }

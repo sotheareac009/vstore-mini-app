@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { tg } from "@/lib/telegram";
+import { supports, tg } from "@/lib/telegram";
 
 /**
  * Boots the Telegram WebApp SDK: expands the viewport, mirrors Telegram's
@@ -33,10 +33,11 @@ export default function TelegramProvider() {
 
     // Paint Telegram's native MainButton in the brand colour, read from the
     // CSS token so globals.css stays the single source of truth.
+    // setParams is 6.1+; on 6.0 the button keeps Telegram's default colour.
     const styles = getComputedStyle(document.documentElement);
     const brand = styles.getPropertyValue("--brand").trim();
     const brandFg = styles.getPropertyValue("--brand-fg").trim();
-    if (brand && brandFg) {
+    if (brand && brandFg && supports("6.1")) {
       app.MainButton.setParams?.({ color: brand, text_color: brandFg });
     }
 
@@ -46,16 +47,22 @@ export default function TelegramProvider() {
 
   useEffect(() => {
     const app = tg();
-    if (!app) return;
+    // BackButton is 6.1+. On 6.0 clients the SDK only logs a warning and does
+    // nothing, so skip it entirely — the in-app breadcrumbs cover navigation.
+    if (!app || !supports("6.1")) return;
 
     const onBack = () => router.back();
     if (pathname === "/") {
       app.BackButton.hide();
-    } else {
-      app.BackButton.show();
-      app.BackButton.onClick(onBack);
+      return;
     }
-    return () => app.BackButton.offClick(onBack);
+
+    app.BackButton.show();
+    app.BackButton.onClick(onBack);
+    return () => {
+      app.BackButton.offClick(onBack);
+      app.BackButton.hide();
+    };
   }, [pathname, router]);
 
   return null;
