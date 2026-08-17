@@ -1,0 +1,16 @@
+node_modules
+.next
+out
+
+# Environment files — never commit real credentials.
+# Only .env.example (placeholder values) is tracked.
+.env
+.env.*
+!.env.example
+
+# Build artefacts
+next-env.d.ts
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+.DS_Store
