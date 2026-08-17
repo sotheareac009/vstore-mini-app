@@ -27,8 +27,8 @@ const ICONS: Record<string, (p: { className?: string }) => React.ReactElement> =
  * subcategories.
  *
  * The catalogue has ~100 categories. Rather than list them all, this shows the
- * same five groupings as vstorecenter.com and loads each section's children on
- * demand when its tab is tapped.
+ * same five groupings as vstorecenter.com, with each section's children in a
+ * sheet underneath.
  */
 export default function BottomNav() {
   const router = useRouter();
@@ -36,10 +36,25 @@ export default function BottomNav() {
   const activeSlug = params.get("category") ?? "";
 
   const [open, setOpen] = useState<NavSection | null>(null);
-  const [subs, setSubs] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(false);
-  /** Sections already fetched — reopening a tab shouldn't hit the network. */
-  const cache = useRef(new Map<string, Category[]>());
+  const [tree, setTree] = useState<Record<string, Category[]> | null>(null);
+  const loaded = useRef(false);
+
+  // One request for all five sections. The nav can't highlight the right tab
+  // until it knows which section owns the active category — `gaming-asus`
+  // has to resolve to Laptop — so the whole map is needed up front.
+  useEffect(() => {
+    if (loaded.current) return;
+    loaded.current = true;
+    fetch("/api/categories")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d?.sections && setTree(d.sections))
+      .catch(() => setTree({})); // offline: tabs still filter, sheets just stay empty
+  }, []);
+
+  /** Which tab owns the active category, section slug or any descendant of it. */
+  const activeSection = NAV_SECTIONS.find(
+    (s) => s.slug === activeSlug || (tree?.[s.slug] ?? []).some((c) => c.slug === activeSlug),
+  );
 
   const go = useCallback(
     (slug: string) => {
@@ -49,36 +64,11 @@ export default function BottomNav() {
     [router],
   );
 
-  async function openSection(section: NavSection) {
+  function openSection(section: NavSection) {
     haptic("light");
-
-    const cached = cache.current.get(section.slug);
-    if (cached) {
-      // A section with no children is just a filter — don't open an empty sheet.
-      if (!cached.length) return go(section.slug);
-      setSubs(cached);
-      setOpen(section);
-      return;
-    }
-
+    // A section with no children is just a filter — don't open an empty sheet.
+    if (tree && !(tree[section.slug] ?? []).length) return go(section.slug);
     setOpen(section);
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/categories?section=${encodeURIComponent(section.slug)}`);
-      const data = await response.json();
-      const items: Category[] = response.ok ? (data.items ?? []) : [];
-      cache.current.set(section.slug, items);
-      if (!items.length) {
-        setOpen(null);
-        return go(section.slug);
-      }
-      setSubs(items);
-    } catch {
-      setOpen(null);
-      go(section.slug); // network trouble — still let the tap do something
-    } finally {
-      setLoading(false);
-    }
   }
 
   // Escape closes the sheet, and the page behind it shouldn't scroll.
@@ -99,8 +89,8 @@ export default function BottomNav() {
       {open && (
         <SubcategorySheet
           section={open}
-          items={subs}
-          loading={loading}
+          items={tree?.[open.slug] ?? []}
+          loading={tree === null}
           activeSlug={activeSlug}
           onPick={go}
           onClose={() => setOpen(null)}
@@ -114,19 +104,38 @@ export default function BottomNav() {
         <ul className="mx-auto flex max-w-2xl">
           {NAV_SECTIONS.map((section) => {
             const Icon = ICONS[section.icon] ?? LaptopIcon;
-            const active = open?.slug === section.slug || activeSlug === section.slug;
+            const active = open?.slug === section.slug || activeSection?.slug === section.slug;
             return (
               <li key={section.slug} className="flex-1">
                 <button
                   type="button"
                   onClick={() => openSection(section)}
                   aria-expanded={open?.slug === section.slug}
-                  className={`flex w-full flex-col items-center gap-1 px-1 pb-2 pt-2.5 transition active:scale-95 ${
+                  aria-current={active ? "page" : undefined}
+                  className={`relative flex w-full flex-col items-center gap-1 px-1 pb-2 pt-2.5 transition active:scale-95 ${
                     active ? "text-brand-ink" : "text-tg-hint"
                   }`}
                 >
-                  <Icon className="h-[22px] w-[22px]" />
-                  <span className="text-[10.5px] font-semibold leading-none">{section.label}</span>
+                  {/* Colour alone is a weak signal at this size, so the active
+                      tab also gets a bar above it and a tinted icon well. */}
+                  <span
+                    aria-hidden="true"
+                    className={`absolute inset-x-3 top-0 h-[2.5px] rounded-full transition ${
+                      active ? "bg-brand" : "bg-transparent"
+                    }`}
+                  />
+                  <span
+                    className={`grid h-7 w-11 place-items-center rounded-full transition ${
+                      active ? "bg-brand-soft" : "bg-transparent"
+                    }`}
+                  >
+                    <Icon className="h-5.25 w-5.25" />
+                  </span>
+                  <span
+                    className={`text-[10.5px] leading-none ${active ? "font-bold" : "font-semibold"}`}
+                  >
+                    {section.label}
+                  </span>
                 </button>
               </li>
             );

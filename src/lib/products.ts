@@ -268,19 +268,29 @@ export async function getProductCategoryPath(categoryIds: number[]): Promise<Cru
  * returned as one flat list ordered by size — the same thing the website's own
  * filter bar does.
  */
-export async function getSubcategories(sectionSlug: string): Promise<Category[]> {
-  const rows = await query<Category & { parent: number }>(
+type CategoryRow = Category & { parent: number };
+
+async function loadCategoryRows(): Promise<CategoryRow[]> {
+  const rows = await query<CategoryRow>(
     `SELECT t.term_id AS id, t.name, t.slug, tt.count, tt.parent
      FROM ${P}terms t
      JOIN ${P}term_taxonomy tt ON tt.term_id = t.term_id
      WHERE tt.taxonomy = 'product_cat'`,
   );
+  return rows.map((r) => ({
+    ...r,
+    id: Number(r.id),
+    count: Number(r.count),
+    parent: Number(r.parent),
+  }));
+}
 
-  const all = rows.map((r) => ({ ...r, id: Number(r.id), count: Number(r.count), parent: Number(r.parent) }));
-  const root = all.find((t) => t.slug === sectionSlug);
+/** Every descendant of `rootSlug` that has products, largest first. */
+function descendantsOf(all: CategoryRow[], rootSlug: string): Category[] {
+  const root = all.find((t) => t.slug === rootSlug);
   if (!root) return [];
 
-  const childrenOf = new Map<number, typeof all>();
+  const childrenOf = new Map<number, CategoryRow[]>();
   for (const term of all) {
     const siblings = childrenOf.get(term.parent) ?? [];
     siblings.push(term);
@@ -303,6 +313,22 @@ export async function getSubcategories(sectionSlug: string): Promise<Category[]>
   }
 
   return out.sort((a, b) => b.count - a.count);
+}
+
+export async function getSubcategories(sectionSlug: string): Promise<Category[]> {
+  return descendantsOf(await loadCategoryRows(), sectionSlug);
+}
+
+/**
+ * Subcategories for every nav section, from a single query.
+ *
+ * The bottom navigation needs the whole map up front, not one section at a
+ * time: it has to know that `gaming-asus` sits under Laptop in order to
+ * highlight the right tab on load.
+ */
+export async function getNavTree(sectionSlugs: string[]): Promise<Record<string, Category[]>> {
+  const all = await loadCategoryRows();
+  return Object.fromEntries(sectionSlugs.map((slug) => [slug, descendantsOf(all, slug)]));
 }
 
 export async function getCategories(limit = 20): Promise<Category[]> {

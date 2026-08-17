@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import type { Category, Sort } from "@/lib/types";
+import type { Sort } from "@/lib/types";
 import { ChevronDownIcon, CloseIcon, SearchIcon } from "./icons";
 
 /* Kept short: a native select sizes itself to its widest option, so long
@@ -15,28 +15,18 @@ const SORT_LABELS: { value: Sort; label: string }[] = [
 ];
 
 /**
- * Search, sort, and the subcategory chips for whichever section is being
- * browsed. Section itself is chosen from the bottom navigation, so this row
- * stays short instead of listing all ~100 categories. All state lives in the URL.
+ * Search and sort, driven through the URL.
+ *
+ * Category selection belongs to the bottom navigation's section sheet — it
+ * used to be duplicated here as a chip row, which meant two lists of the same
+ * subcategories on one screen.
  */
-export default function StoreFilters({
-  categories,
-  sectionSlug,
-  sectionLabel,
-  total,
-}: {
-  /** Subcategories of the current section; empty when nothing is filtered. */
-  categories: Category[];
-  sectionSlug?: string;
-  sectionLabel?: string;
-  total: number;
-}) {
+export default function StoreFilters({ total }: { total: number }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-  const activeCategory = params.get("category") ?? "";
   const activeSort = (params.get("sort") ?? "newest") as Sort;
   const [term, setTerm] = useState(params.get("q") ?? "");
   const firstRender = useRef(true);
@@ -115,27 +105,6 @@ export default function StoreFilters({
         </div>
       </div>
 
-      {/* Only rendered inside a section — on the unfiltered catalogue the
-          bottom navigation is the way in, so there is nothing to show here. */}
-      {sectionSlug && (
-        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
-          <Chip
-            active={activeCategory === sectionSlug}
-            label={`🏪 All ${sectionLabel ?? ""}`.trim()}
-            onClick={() => setParam("category", sectionSlug)}
-          />
-          {categories.map((c) => (
-            <Chip
-              key={c.id}
-              active={activeCategory === c.slug}
-              label={c.name}
-              count={c.count}
-              onClick={() => setParam("category", activeCategory === c.slug ? sectionSlug : c.slug)}
-            />
-          ))}
-        </div>
-      )}
-
       <p className="numeric text-[11px] font-medium uppercase tracking-[0.08em] text-tg-hint">
         {isPending ? "Updating…" : `${total.toLocaleString()} products · ${sortLabel}`}
       </p>
@@ -143,38 +112,3 @@ export default function StoreFilters({
   );
 }
 
-function Chip({
-  active,
-  label,
-  count,
-  onClick,
-}: {
-  active: boolean;
-  label: string;
-  count?: number;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[12px] font-medium transition active:scale-95 ${
-        active
-          ? "border-transparent bg-brand text-brand-fg shadow-brand"
-          : "border-hairline bg-surface text-tg-text shadow-sm"
-      }`}
-    >
-      {label}
-      {count != null && (
-        <span
-          className={`numeric text-[10px] font-semibold ${
-            active ? "text-brand-fg/60" : "text-tg-hint"
-          }`}
-        >
-          {count}
-        </span>
-      )}
-    </button>
-  );
-}
