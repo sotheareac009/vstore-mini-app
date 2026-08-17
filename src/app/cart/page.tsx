@@ -1,48 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ProductImage from "@/components/ProductImage";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useCart } from "@/components/CartProvider";
 import { money } from "@/lib/format";
-import { tg } from "@/lib/telegram";
+import CheckoutForm, { openChat, type Placed } from "@/components/CheckoutForm";
+import { SHOP_USERNAME } from "@/lib/order-message";
 import { BagIcon, MinusIcon, PlusIcon, TrashIcon } from "@/components/icons";
 
 export default function CartPage() {
   const { items, count, total, ready, setQty, remove, clear } = useCart();
-  const [sent, setSent] = useState(false);
+  const [placed, setPlaced] = useState<Placed | null>(null);
 
-  // Telegram's MainButton doubles as the checkout action inside the mini app.
-  useEffect(() => {
-    const app = tg();
-    if (!app) return;
-
-    const button = app.MainButton;
-    const onClick = () => {
-      app.sendData(
-        JSON.stringify({
-          type: "order",
-          items: items.map((i) => ({ id: i.id, qty: i.qty, price: i.price })),
-          total,
-        }),
-      );
-      setSent(true);
-    };
-
-    if (count === 0) {
-      button.hide();
-      return;
-    }
-
-    button.setText(`Checkout · ${money(total)}`);
-    button.show();
-    button.onClick(onClick);
-    return () => {
-      button.offClick(onClick);
-      button.hide();
-    };
-  }, [items, count, total]);
+  // Checked before the empty-cart branch: placing an order clears the cart,
+  // so otherwise the confirmation would be replaced by "your cart is empty".
+  if (placed) return <OrderPlaced placed={placed} />;
 
   if (!ready) {
     return (
@@ -64,13 +38,9 @@ export default function CartPage() {
             <BagIcon className="h-7 w-7" />
           </span>
           <div>
-            <p className="text-[17px] font-semibold">
-              {sent ? "Order sent" : "Your cart is empty"}
-            </p>
+            <p className="text-[17px] font-semibold">Your cart is empty</p>
             <p className="mt-1 text-[13px] leading-relaxed text-tg-hint">
-              {sent
-                ? "Check your chat with the bot to confirm."
-                : "Browse the catalogue and add something you like."}
+              Browse the catalogue and add something you like.
             </p>
           </div>
           <Link
@@ -180,7 +150,49 @@ export default function CartPage() {
         </div>
       </div>
 
-      <CheckoutBar />
+      <CheckoutForm onPlaced={setPlaced} />
+    </CartShell>
+  );
+}
+
+/**
+ * Shown once WooCommerce has accepted the order. The chat opens automatically,
+ * but the link is repeated here in case the client blocked the navigation or
+ * the buyer came back to this screen.
+ */
+function OrderPlaced({ placed }: { placed: Placed }) {
+  const { order, chatLink } = placed;
+
+  return (
+    <CartShell>
+      <div className="flex flex-col items-center justify-center gap-4 px-4 py-14 text-center">
+        <span className="grid h-16 w-16 place-items-center rounded-full bg-brand-soft text-[30px]">
+          ✅
+        </span>
+        <div>
+          <p className="text-[19px] font-bold">Order placed</p>
+          <p className="numeric mt-1 text-[13px] text-tg-hint">Order No. #{order.number}</p>
+          <p className="mt-3 max-w-xs text-[13px] leading-relaxed text-tg-hint">
+            {chatLink
+              ? `We're opening your chat with @${SHOP_USERNAME} so you can send the order details for confirmation.`
+              : "Your order has been sent to the store."}
+          </p>
+        </div>
+
+        {chatLink && (
+          <button
+            type="button"
+            onClick={() => openChat(chatLink)}
+            className="rounded-full bg-brand px-6 py-3 text-[14px] font-semibold text-brand-fg shadow-brand transition active:scale-95"
+          >
+            Send order to @{SHOP_USERNAME}
+          </button>
+        )}
+
+        <Link href="/" className="text-[13px] font-medium text-tg-link">
+          Continue shopping
+        </Link>
+      </div>
     </CartShell>
   );
 }
@@ -217,28 +229,3 @@ function Row({ label, value, muted }: { label: string; value: string; muted?: bo
   );
 }
 
-/** Fallback checkout for plain browsers, where MainButton doesn't exist. */
-function CheckoutBar() {
-  const { items, total, clear } = useCart();
-  const [inTelegram, setInTelegram] = useState(true);
-
-  useEffect(() => setInTelegram(Boolean(tg())), []);
-  if (inTelegram) return null;
-
-  return (
-    <div className="glass fixed inset-x-0 bottom-0 z-30 border-t border-hairline px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-3">
-      <button
-        type="button"
-        onClick={() => {
-          console.info("Order draft", { items, total });
-          clear();
-        }}
-        className="mx-auto flex h-12 w-full max-w-2xl items-center justify-center gap-2 rounded-full bg-brand text-[15px] font-semibold text-brand-fg shadow-brand transition active:scale-[0.98]"
-      >
-        Checkout
-        <span className="numeric opacity-70">·</span>
-        <span className="numeric">{money(total)}</span>
-      </button>
-    </div>
-  );
-}

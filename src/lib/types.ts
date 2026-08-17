@@ -49,3 +49,35 @@ export type CartItem = {
   image: string | null;
   qty: number;
 };
+
+/** How the buyer wants to receive the order. */
+export const FULFILMENTS = ["pickup", "delivery"] as const;
+export type Fulfilment = (typeof FULFILMENTS)[number];
+
+export const FULFILMENT_LABEL: Record<Fulfilment, string> = {
+  pickup: "Pick Up",
+  delivery: "Delivery",
+};
+
+/** What the checkout form collects. */
+export type CheckoutDetails = {
+  name: string;
+  phone: string;
+  address: string;
+  fulfilment: Fulfilment;
+  /** Telegram @username, filled in automatically when we know it. */
+  telegramUser?: string;
+};
+
+export type OrderRequest = CheckoutDetails & {
+  /** Only ids and quantities — prices are resolved server-side. */
+  items: { id: number; qty: number }[];
+};
+
+/** Confirmed order, echoed back from WooCommerce. */
+export type OrderResult = {
+  number: string;
+  total: string;
+  currencySymbol: string;
+  lines: { name: string; qty: number; total: string }[];
+};

@@ -11,6 +11,8 @@ export type TelegramWebApp = {
   };
   /** Bot API version the host client implements, e.g. "6.0" or "7.10". */
   version: string;
+  /** "ios" | "android" | "tdesktop" | … or "unknown" outside Telegram. */
+  platform: string;
   /** Present since 6.0, but feature-detected anyway — see `supports`. */
   isVersionAtLeast?: (version: string) => boolean;
   colorScheme: "light" | "dark";
@@ -53,6 +55,20 @@ declare global {
 export function tg(): TelegramWebApp | null {
   if (typeof window === "undefined") return null;
   return window.Telegram?.WebApp ?? null;
+}
+
+/**
+ * Whether we're really running inside a Telegram client.
+ *
+ * `tg()` is not a reliable test: telegram-web-app.js assigns
+ * window.Telegram.WebApp as soon as it loads, in any browser. Outside Telegram
+ * it reports platform "unknown", and its native chrome (MainButton, BackButton)
+ * draws nothing — so UI that defers to those must check this instead, or
+ * desktop-browser users are left with no button at all.
+ */
+export function inTelegram(): boolean {
+  const app = tg();
+  return Boolean(app && app.platform && app.platform !== "unknown");
 }
 
 /**

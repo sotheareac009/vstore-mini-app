@@ -172,7 +172,16 @@ export function diagnose(error: unknown): SetupProblem {
 
 /** Which of the required vars are currently populated — never their values. */
 export function envStatus(): { key: string; set: boolean }[] {
-  return [...REQUIRED, "DB_PORT", "DB_PREFIX", "NEXT_PUBLIC_UPLOADS_BASE_URL"].map((key) => ({
+  return [
+    ...REQUIRED,
+    "DB_PORT",
+    "DB_PREFIX",
+    "NEXT_PUBLIC_UPLOADS_BASE_URL",
+    "WC_STORE_URL",
+    "WC_CONSUMER_KEY",
+    "WC_CONSUMER_SECRET",
+    "NEXT_PUBLIC_TELEGRAM_SHOP",
+  ].map((key) => ({
     key,
     set: Boolean(process.env[key]?.trim()),
   }));

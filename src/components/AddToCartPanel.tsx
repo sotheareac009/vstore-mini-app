@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/lib/types";
 import { useCart } from "./CartProvider";
-import { tg } from "@/lib/telegram";
+import { inTelegram, tg } from "@/lib/telegram";
 import { money } from "@/lib/format";
 import { CheckIcon, MinusIcon, PlusIcon } from "./icons";
 
@@ -21,7 +21,9 @@ export default function AddToCartPanel({ product }: { product: Product }) {
 
   useEffect(() => {
     const app = tg();
-    if (!app || !product.inStock) return;
+    // Outside Telegram the native button renders nothing — the in-page bar
+    // below is the only control, so don't bother driving MainButton.
+    if (!app || !inTelegram() || !product.inStock) return;
 
     const button = app.MainButton;
     const onClick = () => {
