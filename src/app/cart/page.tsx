@@ -6,6 +6,7 @@ import ProductImage from "@/components/ProductImage";
 import { useCart } from "@/components/CartProvider";
 import { money } from "@/lib/format";
 import { tg } from "@/lib/telegram";
+import { BagIcon, MinusIcon, PlusIcon, TrashIcon } from "@/components/icons";
 
 export default function CartPage() {
   const { items, count, total, ready, setQty, remove, clear } = useCart();
@@ -43,19 +44,34 @@ export default function CartPage() {
   }, [items, count, total]);
 
   if (!ready) {
-    return <p className="px-4 py-16 text-center text-sm text-tg-hint">Loading cart…</p>;
+    return (
+      <main className="space-y-3 px-4 pt-6">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="shimmer h-24 rounded-card" />
+        ))}
+      </main>
+    );
   }
 
   if (count === 0) {
     return (
-      <main className="flex flex-col items-center justify-center gap-4 px-4 py-24 text-center">
-        <p className="text-4xl">🛒</p>
-        <p className="text-sm text-tg-hint">
-          {sent ? "Order sent. Check your chat!" : "Your cart is empty."}
-        </p>
+      <main className="flex flex-col items-center justify-center gap-4 px-8 py-24 text-center">
+        <span className="grid h-16 w-16 place-items-center rounded-full bg-surface text-tg-hint shadow-card">
+          <BagIcon className="h-7 w-7" />
+        </span>
+        <div>
+          <p className="text-[17px] font-semibold">
+            {sent ? "Order sent" : "Your cart is empty"}
+          </p>
+          <p className="mt-1 text-[13px] leading-relaxed text-tg-hint">
+            {sent
+              ? "Check your chat with the bot to confirm."
+              : "Browse the catalogue and add something you like."}
+          </p>
+        </div>
         <Link
           href="/"
-          className="rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-brand-fg"
+          className="rounded-full bg-brand px-6 py-3 text-[14px] font-semibold text-brand-fg shadow-brand transition active:scale-95"
         >
           Browse products
         </Link>
@@ -64,124 +80,137 @@ export default function CartPage() {
   }
 
   return (
-    <main className="px-4 py-4">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold">Cart</h1>
-        <button type="button" onClick={clear} className="text-xs text-tg-danger">
+    <main className="px-4 pb-36 pt-5">
+      <div className="mb-4 flex items-baseline justify-between">
+        <h1 className="text-[26px] font-bold tracking-[-0.03em]">Cart</h1>
+        <button
+          type="button"
+          onClick={clear}
+          className="text-[13px] font-medium text-tg-hint transition active:scale-95"
+        >
           Clear all
         </button>
       </div>
 
-      <ul className="space-y-3">
+      <ul className="space-y-2.5">
         {items.map((item) => (
-          <li key={item.id} className="flex gap-3 rounded-2xl bg-tg-secondary p-3">
+          <li
+            key={item.id}
+            className="flex gap-3 rounded-card border border-hairline bg-surface p-3 shadow-sm"
+          >
             <Link
               href={`/product/${item.id}`}
-              className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-white"
+              className="relative h-[76px] w-[76px] shrink-0 overflow-hidden rounded-xl bg-sunken"
             >
               <ProductImage
                 src={item.image}
                 alt={item.name}
-                sizes="80px"
+                sizes="76px"
                 size={150}
-                className="object-contain p-1"
+                className="object-contain p-1.5"
               />
             </Link>
 
             <div className="flex min-w-0 flex-1 flex-col">
-              <Link href={`/product/${item.id}`} className="line-clamp-2 text-sm font-medium">
-                {item.name}
-              </Link>
-              <p className="mt-0.5 text-xs text-tg-hint">{money(item.price)} each</p>
-
-              <div className="mt-auto flex items-center gap-2 pt-2">
-                <div className="flex items-center overflow-hidden rounded-lg bg-tg-bg">
-                  <button
-                    type="button"
-                    onClick={() => setQty(item.id, item.qty - 1)}
-                    className="px-3 py-1 text-base leading-none"
-                    aria-label={`Decrease quantity of ${item.name}`}
-                  >
-                    −
-                  </button>
-                  <span className="min-w-6 text-center text-sm font-semibold">{item.qty}</span>
-                  <button
-                    type="button"
-                    onClick={() => setQty(item.id, item.qty + 1)}
-                    className="px-3 py-1 text-base leading-none"
-                    aria-label={`Increase quantity of ${item.name}`}
-                  >
-                    +
-                  </button>
-                </div>
-
-                <span className="ml-auto text-sm font-bold">
-                  {money(item.price * item.qty)}
-                </span>
+              <div className="flex items-start gap-2">
+                <Link
+                  href={`/product/${item.id}`}
+                  className="line-clamp-2 flex-1 text-[13px] font-medium leading-[1.35]"
+                >
+                  {item.name}
+                </Link>
                 <button
                   type="button"
                   onClick={() => remove(item.id)}
-                  className="text-xs text-tg-danger"
+                  aria-label={`Remove ${item.name}`}
+                  className="-mr-1 -mt-1 grid h-7 w-7 shrink-0 place-items-center rounded-full text-tg-hint transition active:scale-90"
                 >
-                  Remove
+                  <TrashIcon className="h-4 w-4" />
                 </button>
+              </div>
+
+              <p className="numeric mt-0.5 text-[11px] text-tg-hint">
+                {money(item.price)} each
+              </p>
+
+              <div className="mt-auto flex items-center justify-between gap-2 pt-2">
+                <div className="flex h-8 items-center gap-0.5 rounded-full bg-sunken px-1">
+                  <button
+                    type="button"
+                    onClick={() => setQty(item.id, item.qty - 1)}
+                    aria-label={`Decrease quantity of ${item.name}`}
+                    className="grid h-6 w-6 place-items-center rounded-full transition active:scale-90"
+                  >
+                    <MinusIcon className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="numeric min-w-5 text-center text-[13px] font-bold">
+                    {item.qty}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQty(item.id, item.qty + 1)}
+                    aria-label={`Increase quantity of ${item.name}`}
+                    className="grid h-6 w-6 place-items-center rounded-full transition active:scale-90"
+                  >
+                    <PlusIcon className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <span className="numeric text-[15px] font-bold">
+                  {money(item.price * item.qty)}
+                </span>
               </div>
             </div>
           </li>
         ))}
       </ul>
 
-      <div className="mt-5 space-y-2 rounded-2xl bg-tg-secondary p-4">
-        <Row label={`Subtotal (${count} items)`} value={money(total)} />
+      <div className="mt-4 space-y-2.5 rounded-card border border-hairline bg-surface p-4 shadow-sm">
+        <Row label={`Subtotal · ${count} ${count === 1 ? "item" : "items"}`} value={money(total)} />
         <Row label="Shipping" value="Calculated at checkout" muted />
-        <div className="my-2 h-px bg-tg-bg" />
-        <div className="flex justify-between text-base font-bold">
-          <span>Total</span>
-          <span>{money(total)}</span>
+        <div className="h-px bg-hairline" />
+        <div className="flex items-baseline justify-between">
+          <span className="text-[15px] font-semibold">Total</span>
+          <span className="numeric text-[22px] font-bold">{money(total)}</span>
         </div>
       </div>
 
-      <CheckoutButton />
+      <CheckoutBar />
     </main>
   );
 }
 
 function Row({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
   return (
-    <div className="flex justify-between text-sm">
+    <div className="flex items-baseline justify-between gap-3 text-[13px]">
       <span className="text-tg-hint">{label}</span>
-      <span className={muted ? "text-tg-hint" : ""}>{value}</span>
+      <span className={`numeric ${muted ? "text-tg-hint" : "font-medium"}`}>{value}</span>
     </div>
   );
 }
 
 /** Fallback checkout for plain browsers, where MainButton doesn't exist. */
-function CheckoutButton() {
+function CheckoutBar() {
   const { items, total, clear } = useCart();
-  const [done, setDone] = useState(false);
   const [inTelegram, setInTelegram] = useState(true);
 
   useEffect(() => setInTelegram(Boolean(tg())), []);
   if (inTelegram) return null;
 
   return (
-    <div className="mt-4">
+    <div className="glass fixed inset-x-0 bottom-0 z-30 border-t border-hairline px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-3">
       <button
         type="button"
         onClick={() => {
           console.info("Order draft", { items, total });
-          setDone(true);
           clear();
         }}
-        className="w-full rounded-2xl bg-brand py-3 text-sm font-semibold text-brand-fg"
+        className="mx-auto flex h-12 w-full max-w-2xl items-center justify-center gap-2 rounded-full bg-brand text-[15px] font-semibold text-brand-fg shadow-brand transition active:scale-[0.98]"
       >
-        Checkout · {money(total)}
+        Checkout
+        <span className="numeric opacity-70">·</span>
+        <span className="numeric">{money(total)}</span>
       </button>
-      {done && (
-        <p className="mt-2 text-center text-xs text-tg-hint">
-          Open this page inside Telegram to send the order to the bot.
-        </p>
-      )}
     </div>
   );
 }

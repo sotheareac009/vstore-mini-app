@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { listProducts, parseSort } from "@/lib/products";
+import { diagnose } from "@/lib/setup";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,12 @@ export async function GET(request: Request) {
     return NextResponse.json(data);
   } catch (error) {
     console.error("GET /api/products failed", error);
-    return NextResponse.json({ error: "Failed to load products" }, { status: 500 });
+    const problem = diagnose(error);
+    return NextResponse.json(
+      problem.detailed
+        ? { error: problem.title, detail: problem.summary, variables: problem.variables }
+        : { error: "Failed to load products" },
+      { status: 500 },
+    );
   }
 }

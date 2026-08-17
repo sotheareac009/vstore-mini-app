@@ -1,6 +1,9 @@
 import { getCategories, listProducts, parseSort } from "@/lib/products";
+import { diagnose } from "@/lib/setup";
+import AppHeader from "@/components/AppHeader";
 import StoreFilters from "@/components/StoreFilters";
 import ProductFeed from "@/components/ProductFeed";
+import SetupNotice from "@/components/SetupNotice";
 
 export const dynamic = "force-dynamic";
 
@@ -13,20 +16,21 @@ export default async function HomePage({
 }) {
   const { q, category, sort } = await searchParams;
 
-  const [products, categories] = await Promise.all([
-    listProducts({ search: q, category, sort: parseSort(sort), page: 1, perPage: PER_PAGE }),
-    getCategories(20),
-  ]);
+  let products, categories;
+  try {
+    [products, categories] = await Promise.all([
+      listProducts({ search: q, category, sort: parseSort(sort), page: 1, perPage: PER_PAGE }),
+      getCategories(20),
+    ]);
+  } catch (error) {
+    console.error("HomePage data load failed", error);
+    return <SetupNotice problem={diagnose(error)} />;
+  }
 
   return (
     <main>
-      <header className="px-4 pt-4">
-        <h1 className="text-xl font-bold">{process.env.NEXT_PUBLIC_STORE_NAME ?? "VStore"}</h1>
-        <p className="text-sm text-tg-hint">Tap a product to see details</p>
-      </header>
-
+      <AppHeader subtitle="Computers, components & gaming gear" />
       <StoreFilters categories={categories} total={products.total} />
-
       <ProductFeed
         key={`${q ?? ""}|${category ?? ""}|${sort ?? ""}`}
         initial={products}

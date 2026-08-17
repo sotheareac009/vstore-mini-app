@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { Product, ProductPage } from "@/lib/types";
 import ProductCard from "./ProductCard";
+import { ProductSkeletonGrid } from "./ProductSkeleton";
+import { SearchIcon } from "./icons";
 
 type Filters = { q?: string; category?: string; sort?: string };
 
@@ -63,7 +65,7 @@ export default function ProductFeed({
           .catch((e: Error) => setError(e.message))
           .finally(() => setLoading(false));
       },
-      { rootMargin: "400px" },
+      { rootMargin: "600px" },
     );
 
     observer.observe(node);
@@ -72,9 +74,15 @@ export default function ProductFeed({
 
   if (!items.length) {
     return (
-      <p className="px-4 py-16 text-center text-sm text-tg-hint">
-        No products match your search.
-      </p>
+      <div className="flex flex-col items-center gap-3 px-8 py-20 text-center">
+        <span className="grid h-14 w-14 place-items-center rounded-full bg-surface text-tg-hint shadow-sm">
+          <SearchIcon className="h-6 w-6" />
+        </span>
+        <p className="text-[15px] font-semibold">No products found</p>
+        <p className="text-[13px] leading-relaxed text-tg-hint">
+          Try a different search term or clear the category filter.
+        </p>
+      </div>
     );
   }
 
@@ -86,14 +94,24 @@ export default function ProductFeed({
         ))}
       </div>
 
-      <div ref={sentinel} className="h-10" />
+      <div ref={sentinel} aria-hidden className="h-4" />
 
-      {loading && <p className="pb-4 text-center text-sm text-tg-hint">Loading…</p>}
-      {error && (
-        <p className="pb-4 text-center text-sm text-tg-danger">Could not load more: {error}</p>
+      {loading && (
+        <div className="pt-3">
+          <ProductSkeletonGrid count={2} />
+        </div>
       )}
+
+      {error && (
+        <p className="px-4 py-5 text-center text-[13px] text-tg-danger">
+          Could not load more: {error}
+        </p>
+      )}
+
       {!hasMore && !loading && (
-        <p className="pb-4 text-center text-xs text-tg-hint">That&apos;s everything.</p>
+        <p className="px-4 py-6 text-center text-[11px] font-medium uppercase tracking-[0.08em] text-tg-hint">
+          End of catalogue
+        </p>
       )}
     </>
   );

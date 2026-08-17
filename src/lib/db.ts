@@ -1,4 +1,5 @@
 import mysql from "mysql2/promise";
+import { SetupError, missingEnv, missingEnvProblem } from "./setup";
 
 declare global {
   // Reuse the pool across hot reloads in dev so we don't exhaust connections.
@@ -6,6 +7,11 @@ declare global {
 }
 
 function createPool() {
+  // Fail with a named list of variables rather than letting the driver dial
+  // 127.0.0.1 as root and report a confusing access-denied error instead.
+  const missing = missingEnv();
+  if (missing.length) throw new SetupError(missingEnvProblem(missing));
+
   return mysql.createPool({
     host: process.env.DB_HOST ?? "127.0.0.1",
     port: Number(process.env.DB_PORT ?? 3306),
@@ -19,14 +25,22 @@ function createPool() {
   });
 }
 
-export const pool: mysql.Pool = global.__vstorePool ?? createPool();
+/**
+ * Built on first query, not at import time, so a configuration problem surfaces
+ * as a catchable error inside the page render instead of a module-load crash.
+ */
+let cached: mysql.Pool | undefined;
 
-if (process.env.NODE_ENV !== "production") {
-  global.__vstorePool = pool;
+export function getPool(): mysql.Pool {
+  cached ??= global.__vstorePool ?? createPool();
+  if (process.env.NODE_ENV !== "production") {
+    global.__vstorePool = cached;
+  }
+  return cached;
 }
 
 export async function query<T>(sql: string, params: unknown[] = []): Promise<T[]> {
-  const [rows] = await pool.query(sql, params);
+  const [rows] = await getPool().query(sql, params);
   return rows as T[];
 }
 

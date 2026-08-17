@@ -7,24 +7,33 @@ export default function ProductGallery({ images, alt }: { images: string[]; alt:
   const [active, setActive] = useState(0);
 
   if (!images.length) {
-    return (
-      <div className="flex aspect-square items-center justify-center bg-tg-secondary text-sm text-tg-hint">
-        No image
-      </div>
-    );
+    return <div className="aspect-square bg-sunken" />;
   }
 
   return (
-    <div>
-      <div className="relative aspect-square bg-white">
+    <div className="bg-surface">
+      <div className="relative aspect-square bg-sunken">
         <ProductImage
           src={images[active]}
           alt={alt}
           sizes="(max-width: 640px) 100vw, 640px"
           size={600}
-          className="object-contain p-3"
+          className="object-contain p-6"
           priority
         />
+
+        {images.length > 1 && (
+          <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5">
+            {images.map((src, i) => (
+              <span
+                key={`dot-${src}-${i}`}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  i === active ? "w-5 bg-tg-text/70" : "w-1.5 bg-tg-text/25"
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {images.length > 1 && (
@@ -34,17 +43,20 @@ export default function ProductGallery({ images, alt }: { images: string[]; alt:
               key={`${src}-${i}`}
               type="button"
               onClick={() => setActive(i)}
-              className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-white ring-2 transition ${
-                i === active ? "ring-brand" : "ring-transparent"
-              }`}
               aria-label={`View image ${i + 1}`}
+              aria-current={i === active}
+              className={`relative h-[62px] w-[62px] shrink-0 overflow-hidden rounded-xl bg-sunken transition ${
+                i === active
+                  ? "ring-2 ring-brand ring-offset-2 ring-offset-surface"
+                  : "opacity-60"
+              }`}
             >
               <ProductImage
                 src={src}
                 alt=""
-                sizes="64px"
+                sizes="62px"
                 size={150}
-                className="object-contain p-1"
+                className="object-contain p-1.5"
               />
             </button>
           ))}

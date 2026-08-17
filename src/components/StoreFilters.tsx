@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Category, Sort } from "@/lib/types";
+import { ChevronDownIcon, CloseIcon, SearchIcon } from "./icons";
 
+/* Kept short: a native select sizes itself to its widest option, so long
+   labels here push the whole filter row past the viewport width. */
 const SORT_LABELS: { value: Sort; label: string }[] = [
   { value: "newest", label: "Newest" },
   { value: "popular", label: "Popular" },
@@ -11,7 +14,7 @@ const SORT_LABELS: { value: Sort; label: string }[] = [
   { value: "price-desc", label: "Price ↓" },
 ];
 
-/** Search box, category chips and sort selector — all driven through the URL. */
+/** Search, category chips and sort — all driven through the URL. */
 export default function StoreFilters({
   categories,
   total,
@@ -22,7 +25,7 @@ export default function StoreFilters({
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
 
   const activeCategory = params.get("category") ?? "";
   const activeSort = (params.get("sort") ?? "newest") as Sort;
@@ -56,62 +59,69 @@ export default function StoreFilters({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [term]);
 
+  const sortLabel = SORT_LABELS.find((s) => s.value === activeSort)?.label ?? "Newest";
+
   return (
-    <div className="sticky top-0 z-20 space-y-3 bg-tg-bg/95 px-4 pb-3 pt-3 backdrop-blur">
+    <div className="glass sticky top-0 z-20 space-y-3 px-4 pb-3 pt-1">
       <div className="flex items-center gap-2">
-        <div className="relative flex-1">
+        <div className="relative min-w-0 flex-1">
+          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-tg-hint">
+            <SearchIcon className="h-4.25 w-4.25" />
+          </span>
           <input
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            placeholder="Search products or SKU…"
-            className="w-full rounded-xl bg-tg-secondary py-2.5 pl-9 pr-8 text-sm outline-none placeholder:text-tg-hint"
+            placeholder="Search products or SKU"
+            aria-label="Search products"
+            className="h-11 w-full rounded-full border border-hairline bg-surface pl-10 pr-9 text-[14px] shadow-sm outline-none transition placeholder:text-tg-hint focus:border-brand/50 focus:ring-4 focus:ring-brand-soft"
           />
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-tg-hint">
-            ⌕
-          </span>
           {term && (
             <button
               type="button"
               onClick={() => setTerm("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 px-1 text-tg-hint"
               aria-label="Clear search"
+              className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full bg-sunken text-tg-hint transition active:scale-90"
             >
-              ✕
+              <CloseIcon className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
 
-        <select
-          value={activeSort}
-          onChange={(e) => setParam("sort", e.target.value)}
-          className="rounded-xl bg-tg-secondary px-2 py-2.5 text-sm outline-none"
-          aria-label="Sort products"
-        >
-          {SORT_LABELS.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </select>
+        {/* Native select keeps the OS picker (good on mobile) but is styled as
+            a pill so it doesn't look like a raw form control. */}
+        <div className="relative shrink-0">
+          <select
+            value={activeSort}
+            onChange={(e) => setParam("sort", e.target.value)}
+            aria-label="Sort products"
+            className="h-11 w-28 appearance-none truncate rounded-full border border-hairline bg-surface pl-4 pr-9 text-[13px] font-medium shadow-sm outline-none"
+          >
+            {SORT_LABELS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-tg-hint" />
+        </div>
       </div>
 
       <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
-        <Chip
-          active={!activeCategory}
-          label="All"
-          onClick={() => setParam("category", "")}
-        />
+        <Chip active={!activeCategory} label="All" onClick={() => setParam("category", "")} />
         {categories.map((c) => (
           <Chip
             key={c.id}
             active={activeCategory === c.slug}
-            label={`${c.name} (${c.count})`}
+            label={c.name}
+            count={c.count}
             onClick={() => setParam("category", activeCategory === c.slug ? "" : c.slug)}
           />
         ))}
       </div>
 
-      <p className="text-xs text-tg-hint">{total} products</p>
+      <p className="numeric text-[11px] font-medium uppercase tracking-[0.08em] text-tg-hint">
+        {isPending ? "Updating…" : `${total.toLocaleString()} products · ${sortLabel}`}
+      </p>
     </div>
   );
 }
@@ -119,21 +129,35 @@ export default function StoreFilters({
 function Chip({
   active,
   label,
+  count,
   onClick,
 }: {
   active: boolean;
   label: string;
+  count?: number;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-        active ? "bg-brand text-brand-fg" : "bg-tg-secondary text-tg-text"
+      aria-pressed={active}
+      className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-[13px] font-medium transition active:scale-95 ${
+        active
+          ? "border-transparent bg-brand text-brand-fg shadow-brand"
+          : "border-hairline bg-surface text-tg-text shadow-sm"
       }`}
     >
       {label}
+      {count != null && (
+        <span
+          className={`numeric text-[11px] font-semibold ${
+            active ? "text-brand-fg/60" : "text-tg-hint"
+          }`}
+        >
+          {count}
+        </span>
+      )}
     </button>
   );
 }
