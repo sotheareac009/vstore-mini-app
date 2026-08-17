@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProduct } from "@/lib/products";
+import { getProduct, getProductCategoryPath } from "@/lib/products";
 import { diagnose } from "@/lib/setup";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import ProductGallery from "@/components/ProductGallery";
 import AddToCartPanel from "@/components/AddToCartPanel";
 import SetupNotice from "@/components/SetupNotice";
@@ -25,6 +26,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   }
   if (!product) notFound();
 
+  const trail = await getProductCategoryPath(product.categories.map((c) => c.id));
+
   const discount =
     product.regularPrice && product.regularPrice > product.price
       ? Math.round((1 - product.price / product.regularPrice) * 100)
@@ -32,6 +35,10 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
   return (
     <main className="pb-32">
+      <div className="px-3 py-2.5">
+        <Breadcrumbs trail={trail} current={product.name} />
+      </div>
+
       <ProductGallery images={product.gallery} alt={product.name} />
 
       <section className="mt-3 space-y-4 border-y border-hairline bg-surface px-4 py-5">

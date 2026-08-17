@@ -20,6 +20,10 @@ export type ProductDetail = Product & {
   categories: { id: number; name: string; slug: string }[];
 };
 
+/** One step of a breadcrumb trail. Lives here, not in products.ts, so client
+ *  components can import it without pulling in the server-only DB module. */
+export type Crumb = { name: string; slug: string };
+
 export type Category = {
   id: number;
   name: string;

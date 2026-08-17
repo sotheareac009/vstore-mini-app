@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import ProductImage from "@/components/ProductImage";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { useCart } from "@/components/CartProvider";
 import { money } from "@/lib/format";
 import { tg } from "@/lib/telegram";
@@ -45,42 +46,46 @@ export default function CartPage() {
 
   if (!ready) {
     return (
-      <main className="space-y-3 px-4 pt-6">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="shimmer h-24 rounded-card" />
-        ))}
-      </main>
+      <CartShell>
+        <div className="space-y-3 pt-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="shimmer h-24 rounded-card" />
+          ))}
+        </div>
+      </CartShell>
     );
   }
 
   if (count === 0) {
     return (
-      <main className="flex flex-col items-center justify-center gap-4 px-8 py-24 text-center">
-        <span className="grid h-16 w-16 place-items-center rounded-full bg-surface text-tg-hint shadow-card">
-          <BagIcon className="h-7 w-7" />
-        </span>
-        <div>
-          <p className="text-[17px] font-semibold">
-            {sent ? "Order sent" : "Your cart is empty"}
-          </p>
-          <p className="mt-1 text-[13px] leading-relaxed text-tg-hint">
-            {sent
-              ? "Check your chat with the bot to confirm."
-              : "Browse the catalogue and add something you like."}
-          </p>
+      <CartShell>
+        <div className="flex flex-col items-center justify-center gap-4 px-4 py-16 text-center">
+          <span className="grid h-16 w-16 place-items-center rounded-full bg-surface text-tg-hint shadow-card">
+            <BagIcon className="h-7 w-7" />
+          </span>
+          <div>
+            <p className="text-[17px] font-semibold">
+              {sent ? "Order sent" : "Your cart is empty"}
+            </p>
+            <p className="mt-1 text-[13px] leading-relaxed text-tg-hint">
+              {sent
+                ? "Check your chat with the bot to confirm."
+                : "Browse the catalogue and add something you like."}
+            </p>
+          </div>
+          <Link
+            href="/"
+            className="rounded-full bg-brand px-6 py-3 text-[14px] font-semibold text-brand-fg shadow-brand transition active:scale-95"
+          >
+            Browse products
+          </Link>
         </div>
-        <Link
-          href="/"
-          className="rounded-full bg-brand px-6 py-3 text-[14px] font-semibold text-brand-fg shadow-brand transition active:scale-95"
-        >
-          Browse products
-        </Link>
-      </main>
+      </CartShell>
     );
   }
 
   return (
-    <main className="px-4 pb-36 pt-5">
+    <CartShell className="pb-36">
       <div className="mb-4 flex items-baseline justify-between">
         <h1 className="text-[26px] font-bold tracking-[-0.03em]">Cart</h1>
         <button
@@ -176,6 +181,29 @@ export default function CartPage() {
       </div>
 
       <CheckoutBar />
+    </CartShell>
+  );
+}
+
+/**
+ * Shared frame for every cart state. The cart lives in localStorage, so the
+ * server renders the loading state and the real contents only appear after
+ * hydration — keeping the breadcrumb out here means it is present in all
+ * three states rather than only once items exist.
+ */
+function CartShell({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <main className={`px-4 pt-3 ${className}`}>
+      <div className="-mx-1 pb-2">
+        <Breadcrumbs trail={[]} current="Cart" />
+      </div>
+      {children}
     </main>
   );
 }

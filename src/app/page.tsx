@@ -1,6 +1,7 @@
-import { getCategories, listProducts, parseSort } from "@/lib/products";
+import { getCategories, getCategoryPath, listProducts, parseSort } from "@/lib/products";
 import { diagnose } from "@/lib/setup";
 import AppHeader from "@/components/AppHeader";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import StoreFilters from "@/components/StoreFilters";
 import ProductFeed from "@/components/ProductFeed";
 import SetupNotice from "@/components/SetupNotice";
@@ -16,11 +17,12 @@ export default async function HomePage({
 }) {
   const { q, category, sort } = await searchParams;
 
-  let products, categories;
+  let products, categories, trail;
   try {
-    [products, categories] = await Promise.all([
+    [products, categories, trail] = await Promise.all([
       listProducts({ search: q, category, sort: parseSort(sort), page: 1, perPage: PER_PAGE }),
       getCategories(20),
+      getCategoryPath(category ?? ""),
     ]);
   } catch (error) {
     console.error("HomePage data load failed", error);
@@ -30,6 +32,13 @@ export default async function HomePage({
   return (
     <main>
       <AppHeader subtitle="Computers, components & gaming gear" />
+
+      {trail.length > 0 && (
+        <div className="px-3 pb-1">
+          <Breadcrumbs trail={trail} />
+        </div>
+      )}
+
       <StoreFilters categories={categories} total={products.total} />
       <ProductFeed
         key={`${q ?? ""}|${category ?? ""}|${sort ?? ""}`}

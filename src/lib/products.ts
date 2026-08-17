@@ -1,6 +1,6 @@
 import "server-only";
 import { P, query } from "./db";
-import type { Category, Product, ProductDetail, ProductPage, Sort } from "./types";
+import type { Category, Crumb, Product, ProductDetail, ProductPage, Sort } from "./types";
 import { SORTS } from "./types";
 
 import { UPLOADS_BASE } from "./images";
@@ -206,6 +206,58 @@ export async function getProduct(id: number): Promise<ProductDetail | null> {
     gallery: base.image ? [base.image, ...gallery] : gallery,
     categories: categories.map((c) => ({ ...c, id: Number(c.id) })),
   };
+}
+
+type TermRow = { id: number; name: string; slug: string; parent: number };
+
+/** All product categories (97 rows) — cheap enough to walk in memory. */
+async function loadCategoryTerms(): Promise<TermRow[]> {
+  const rows = await query<TermRow>(
+    `SELECT t.term_id AS id, t.name, t.slug, tt.parent
+     FROM ${P}terms t
+     JOIN ${P}term_taxonomy tt ON tt.term_id = t.term_id
+     WHERE tt.taxonomy = 'product_cat'`,
+  );
+  return rows.map((r) => ({ ...r, id: Number(r.id), parent: Number(r.parent) }));
+}
+
+function walkUp(terms: TermRow[], startId: number): Crumb[] {
+  const byId = new Map(terms.map((t) => [t.id, t]));
+  const trail: Crumb[] = [];
+  const seen = new Set<number>();
+
+  let current = byId.get(startId);
+  while (current && !seen.has(current.id)) {
+    seen.add(current.id); // guard against a malformed parent cycle
+    trail.unshift({ name: current.name, slug: current.slug });
+    current = current.parent ? byId.get(current.parent) : undefined;
+  }
+  return trail;
+}
+
+/** Ancestor trail for a category slug, root first. */
+export async function getCategoryPath(slug: string): Promise<Crumb[]> {
+  if (!slug) return [];
+  const terms = await loadCategoryTerms();
+  const term = terms.find((t) => t.slug === slug);
+  return term ? walkUp(terms, term.id) : [];
+}
+
+/**
+ * Trail for a product. A product is usually filed under several categories at
+ * once, so pick the deepest (most specific) one and follow its ancestors —
+ * "Component / Cooler / Liquid Cooler" says far more than "All Product".
+ */
+export async function getProductCategoryPath(categoryIds: number[]): Promise<Crumb[]> {
+  if (!categoryIds.length) return [];
+  const terms = await loadCategoryTerms();
+
+  let best: Crumb[] = [];
+  for (const id of categoryIds) {
+    const trail = walkUp(terms, id);
+    if (trail.length > best.length) best = trail;
+  }
+  return best;
 }
 
 export async function getCategories(limit = 20): Promise<Category[]> {
