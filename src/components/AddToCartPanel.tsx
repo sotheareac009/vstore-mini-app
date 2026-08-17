@@ -48,7 +48,7 @@ export default function AddToCartPanel({ product }: { product: Product }) {
   }, [justAdded]);
 
   return (
-    <div className="glass fixed inset-x-0 bottom-0 z-30 border-t border-hairline px-4 pb-[max(0.875rem,env(safe-area-inset-bottom))] pt-3">
+    <div className="glass fixed inset-x-0 bottom-[calc(var(--nav-h)+env(safe-area-inset-bottom))] z-30 border-t border-hairline px-4 pb-3.5 pt-3">
       <div className="mx-auto flex max-w-2xl items-center gap-3">
         <div className="flex h-12 shrink-0 items-center gap-1 rounded-full border border-hairline bg-surface px-1.5 shadow-sm">
           <button

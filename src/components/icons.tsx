@@ -108,3 +108,52 @@ export function SlidersIcon({ className = "h-4 w-4" }: IconProps) {
     </svg>
   );
 }
+
+/* --- Bottom navigation --- */
+
+export function LaptopIcon({ className = "h-5 w-5" }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <rect x="4" y="5" width="16" height="11" rx="1.5" />
+      <path d="M2 19h20" />
+    </svg>
+  );
+}
+
+export function ChipIcon({ className = "h-5 w-5" }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <rect x="7" y="7" width="10" height="10" rx="1.5" />
+      <path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4" />
+    </svg>
+  );
+}
+
+export function GamepadIcon({ className = "h-5 w-5" }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <path d="M7 12H4.5M5.75 10.75v2.5" />
+      <circle cx="17" cy="12.5" r="0.9" fill="currentColor" stroke="none" />
+      <circle cx="14.5" cy="10.5" r="0.9" fill="currentColor" stroke="none" />
+      <path d="M8 7h8a5 5 0 0 1 5 5v2a3 3 0 0 1-5.4 1.8L14 14h-4l-1.6 1.8A3 3 0 0 1 3 14v-2a5 5 0 0 1 5-5Z" />
+    </svg>
+  );
+}
+
+export function WifiIcon({ className = "h-5 w-5" }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <path d="M2.5 9a15 15 0 0 1 19 0M5.5 12.5a10 10 0 0 1 13 0M8.5 16a5 5 0 0 1 7 0" />
+      <circle cx="12" cy="19.5" r="0.9" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function TagIcon({ className = "h-5 w-5" }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <path d="M3 12.6V4.5a1.5 1.5 0 0 1 1.5-1.5h8.1a1.5 1.5 0 0 1 1.06.44l6.4 6.4a1.5 1.5 0 0 1 0 2.12l-8.1 8.1a1.5 1.5 0 0 1-2.12 0l-6.4-6.4A1.5 1.5 0 0 1 3 12.6Z" />
+      <circle cx="7.75" cy="7.75" r="1.25" />
+    </svg>
+  );
+}

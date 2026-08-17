@@ -260,6 +260,51 @@ export async function getProductCategoryPath(categoryIds: number[]): Promise<Cru
   return best;
 }
 
+/**
+ * Subcategories to offer for one section, flattened.
+ *
+ * The tree is up to three levels deep (Component → RAM → Desktop → DDR5), but
+ * a phone has no room for nested menus, so every descendant with products is
+ * returned as one flat list ordered by size — the same thing the website's own
+ * filter bar does.
+ */
+export async function getSubcategories(sectionSlug: string): Promise<Category[]> {
+  const rows = await query<Category & { parent: number }>(
+    `SELECT t.term_id AS id, t.name, t.slug, tt.count, tt.parent
+     FROM ${P}terms t
+     JOIN ${P}term_taxonomy tt ON tt.term_id = t.term_id
+     WHERE tt.taxonomy = 'product_cat'`,
+  );
+
+  const all = rows.map((r) => ({ ...r, id: Number(r.id), count: Number(r.count), parent: Number(r.parent) }));
+  const root = all.find((t) => t.slug === sectionSlug);
+  if (!root) return [];
+
+  const childrenOf = new Map<number, typeof all>();
+  for (const term of all) {
+    const siblings = childrenOf.get(term.parent) ?? [];
+    siblings.push(term);
+    childrenOf.set(term.parent, siblings);
+  }
+
+  const out: Category[] = [];
+  const seen = new Set<number>([root.id]); // also guards against a parent cycle
+  const queue = [root.id];
+
+  while (queue.length) {
+    for (const child of childrenOf.get(queue.shift()!) ?? []) {
+      if (seen.has(child.id)) continue;
+      seen.add(child.id);
+      queue.push(child.id);
+      if (child.count > 0) {
+        out.push({ id: child.id, name: child.name, slug: child.slug, count: child.count });
+      }
+    }
+  }
+
+  return out.sort((a, b) => b.count - a.count);
+}
+
 export async function getCategories(limit = 20): Promise<Category[]> {
   const rows = await query<Category>(
     `SELECT t.term_id AS id, t.name, t.slug, tt.count

@@ -1,4 +1,5 @@
-import { getCategories, getCategoryPath, listProducts, parseSort } from "@/lib/products";
+import { getCategoryPath, getSubcategories, listProducts, parseSort } from "@/lib/products";
+import { NAV_SECTIONS, sectionForSlug } from "@/lib/nav";
 import { diagnose } from "@/lib/setup";
 import AppHeader from "@/components/AppHeader";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -17,13 +18,18 @@ export default async function HomePage({
 }) {
   const { q, category, sort } = await searchParams;
 
-  let products, categories, trail;
+  let products, trail, siblings, section;
   try {
-    [products, categories, trail] = await Promise.all([
+    [products, trail] = await Promise.all([
       listProducts({ search: q, category, sort: parseSort(sort), page: 1, perPage: PER_PAGE }),
-      getCategories(20),
       getCategoryPath(category ?? ""),
     ]);
+
+    // The chip row shows where you are *within* a section rather than every
+    // category in the store, so find which of the five the current filter
+    // belongs to — the trail runs root-first, so its head is that section.
+    section = sectionForSlug(trail.find((c) => NAV_SECTIONS.some((s) => s.slug === c.slug))?.slug);
+    siblings = section ? await getSubcategories(section.slug) : [];
   } catch (error) {
     console.error("HomePage data load failed", error);
     return <SetupNotice problem={diagnose(error)} />;
@@ -39,7 +45,12 @@ export default async function HomePage({
         </div>
       )}
 
-      <StoreFilters categories={categories} total={products.total} />
+      <StoreFilters
+        categories={siblings}
+        sectionSlug={section?.slug}
+        sectionLabel={section?.label}
+        total={products.total}
+      />
       <ProductFeed
         key={`${q ?? ""}|${category ?? ""}|${sort ?? ""}`}
         initial={products}

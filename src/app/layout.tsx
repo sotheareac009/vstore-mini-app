@@ -12,9 +12,11 @@ const play = Play({
   display: "swap",
   variable: "--font-play",
 });
+import { Suspense } from "react";
 import { CartProvider } from "@/components/CartProvider";
 import TelegramProvider from "@/components/TelegramProvider";
 import CartBar from "@/components/CartBar";
+import BottomNav from "@/components/BottomNav";
 
 const storeName = process.env.NEXT_PUBLIC_STORE_NAME ?? "VStore";
 
@@ -53,9 +55,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <CartProvider>
           <TelegramProvider />
-          {/* Pages own their bottom padding — the action bars are fixed. */}
-          <div className="mx-auto w-full max-w-2xl">{children}</div>
+          {/* Pages own their extra bottom padding for the fixed action bars;
+              the nav's own height is reserved here for every page. */}
+          <div className="mx-auto w-full max-w-2xl pb-[calc(var(--nav-h)+env(safe-area-inset-bottom))]">
+            {children}
+          </div>
           <CartBar />
+          {/* useSearchParams needs a Suspense boundary to keep static pages
+              (like /cart) prerenderable. */}
+          <Suspense fallback={null}>
+            <BottomNav />
+          </Suspense>
         </CartProvider>
       </body>
     </html>

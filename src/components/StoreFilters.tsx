@@ -14,12 +14,21 @@ const SORT_LABELS: { value: Sort; label: string }[] = [
   { value: "price-desc", label: "Price ↓" },
 ];
 
-/** Search, category chips and sort — all driven through the URL. */
+/**
+ * Search, sort, and the subcategory chips for whichever section is being
+ * browsed. Section itself is chosen from the bottom navigation, so this row
+ * stays short instead of listing all ~100 categories. All state lives in the URL.
+ */
 export default function StoreFilters({
   categories,
+  sectionSlug,
+  sectionLabel,
   total,
 }: {
+  /** Subcategories of the current section; empty when nothing is filtered. */
   categories: Category[];
+  sectionSlug?: string;
+  sectionLabel?: string;
   total: number;
 }) {
   const router = useRouter();
@@ -106,18 +115,26 @@ export default function StoreFilters({
         </div>
       </div>
 
-      <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
-        <Chip active={!activeCategory} label="All" onClick={() => setParam("category", "")} />
-        {categories.map((c) => (
+      {/* Only rendered inside a section — on the unfiltered catalogue the
+          bottom navigation is the way in, so there is nothing to show here. */}
+      {sectionSlug && (
+        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
           <Chip
-            key={c.id}
-            active={activeCategory === c.slug}
-            label={c.name}
-            count={c.count}
-            onClick={() => setParam("category", activeCategory === c.slug ? "" : c.slug)}
+            active={activeCategory === sectionSlug}
+            label={`🏪 All ${sectionLabel ?? ""}`.trim()}
+            onClick={() => setParam("category", sectionSlug)}
           />
-        ))}
-      </div>
+          {categories.map((c) => (
+            <Chip
+              key={c.id}
+              active={activeCategory === c.slug}
+              label={c.name}
+              count={c.count}
+              onClick={() => setParam("category", activeCategory === c.slug ? sectionSlug : c.slug)}
+            />
+          ))}
+        </div>
+      )}
 
       <p className="numeric text-[11px] font-medium uppercase tracking-[0.08em] text-tg-hint">
         {isPending ? "Updating…" : `${total.toLocaleString()} products · ${sortLabel}`}
@@ -142,7 +159,7 @@ function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-[13px] font-medium transition active:scale-95 ${
+      className={`flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[12px] font-medium transition active:scale-95 ${
         active
           ? "border-transparent bg-brand text-brand-fg shadow-brand"
           : "border-hairline bg-surface text-tg-text shadow-sm"
@@ -151,7 +168,7 @@ function Chip({
       {label}
       {count != null && (
         <span
-          className={`numeric text-[11px] font-semibold ${
+          className={`numeric text-[10px] font-semibold ${
             active ? "text-brand-fg/60" : "text-tg-hint"
           }`}
         >

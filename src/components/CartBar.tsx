@@ -17,7 +17,7 @@ export default function CartBar() {
 
   return (
     <div
-      className={`pointer-events-none fixed inset-x-0 bottom-0 z-30 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-6 transition-all duration-300 ${
+      className={`pointer-events-none fixed inset-x-0 bottom-[calc(var(--nav-h)+env(safe-area-inset-bottom))] z-30 px-4 pb-4 pt-6 transition-all duration-300 ${
         hidden ? "translate-y-6 opacity-0" : "translate-y-0 opacity-100"
       }`}
       aria-hidden={hidden}

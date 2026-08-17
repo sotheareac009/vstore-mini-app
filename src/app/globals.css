@@ -15,6 +15,11 @@
  */
 
 :root {
+  /* Height of the sticky bottom navigation, excluding the safe-area inset.
+     Fixed action bars stack on top of it and pages pad their content by it,
+     so it is defined once here. */
+  --nav-h: 3.625rem;
+
   /* Brand. White on #00c44f is only 2.3:1, so the ink on brand fills is
      near-black (8.2:1). --brand-ink is the readable green for text. */
   --brand: #00c44f;
