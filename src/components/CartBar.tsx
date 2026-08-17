@@ -22,10 +22,15 @@ export default function CartBar() {
       }`}
       aria-hidden={hidden}
     >
+      {/* pointer-events must follow `hidden`: opacity-0 still hit-tests, so a
+          faded-out bar would otherwise swallow taps meant for the fixed action
+          bars underneath it on the cart and product pages. */}
       <Link
         href="/cart"
         tabIndex={hidden ? -1 : 0}
-        className="pointer-events-auto mx-auto flex max-w-2xl items-center gap-3 rounded-full bg-brand py-3 pl-4 pr-5 text-brand-fg shadow-float transition active:scale-[0.98]"
+        className={`mx-auto flex max-w-2xl items-center gap-3 rounded-full bg-brand py-3 pl-4 pr-5 text-brand-fg shadow-float transition active:scale-[0.98] ${
+          hidden ? "pointer-events-none" : "pointer-events-auto"
+        }`}
       >
         <span className="relative grid h-9 w-9 place-items-center rounded-full bg-brand-fg/10">
           <BagIcon className="h-[18px] w-[18px]" />
