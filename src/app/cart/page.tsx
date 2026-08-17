@@ -55,7 +55,7 @@ export default function CartPage() {
         </p>
         <Link
           href="/"
-          className="rounded-xl bg-tg-button px-5 py-2.5 text-sm font-semibold text-tg-button-text"
+          className="rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-brand-fg"
         >
           Browse products
         </Link>
@@ -173,7 +173,7 @@ function CheckoutButton() {
           setDone(true);
           clear();
         }}
-        className="w-full rounded-2xl bg-tg-button py-3 text-sm font-semibold text-tg-button-text"
+        className="w-full rounded-2xl bg-brand py-3 text-sm font-semibold text-brand-fg"
       >
         Checkout · {money(total)}
       </button>

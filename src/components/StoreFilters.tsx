@@ -130,7 +130,7 @@ function Chip({
       type="button"
       onClick={onClick}
       className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-        active ? "bg-tg-button text-tg-button-text" : "bg-tg-secondary text-tg-text"
+        active ? "bg-brand text-brand-fg" : "bg-tg-secondary text-tg-text"
       }`}
     >
       {label}

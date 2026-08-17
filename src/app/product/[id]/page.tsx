@@ -34,7 +34,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           )}
           <span
             className={`ml-auto text-xs font-medium ${
-              product.inStock ? "text-tg-link" : "text-tg-danger"
+              product.inStock ? "text-brand-ink" : "text-tg-danger"
             }`}
           >
             {product.inStock

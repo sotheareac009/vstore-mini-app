@@ -35,7 +35,7 @@ export default function ProductGallery({ images, alt }: { images: string[]; alt:
               type="button"
               onClick={() => setActive(i)}
               className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-white ring-2 transition ${
-                i === active ? "ring-tg-button" : "ring-transparent"
+                i === active ? "ring-brand" : "ring-transparent"
               }`}
               aria-label={`View image ${i + 1}`}
             >

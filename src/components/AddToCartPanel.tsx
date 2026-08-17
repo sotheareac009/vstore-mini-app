@@ -67,7 +67,7 @@ export default function AddToCartPanel({ product }: { product: Product }) {
         type="button"
         onClick={() => add(product, qty)}
         disabled={!product.inStock}
-        className="w-full rounded-2xl bg-tg-button py-3 text-sm font-semibold text-tg-button-text transition active:scale-[0.99] disabled:opacity-40"
+        className="w-full rounded-2xl bg-brand py-3 text-sm font-semibold text-brand-fg transition active:scale-[0.99] disabled:opacity-40"
       >
         {product.inStock
           ? `Add to cart · ${money(product.price * qty)}`

@@ -30,6 +30,16 @@ export default function TelegramProvider() {
     };
 
     applyTheme();
+
+    // Paint Telegram's native MainButton in the brand colour, read from the
+    // CSS token so globals.css stays the single source of truth.
+    const styles = getComputedStyle(document.documentElement);
+    const brand = styles.getPropertyValue("--brand").trim();
+    const brandFg = styles.getPropertyValue("--brand-fg").trim();
+    if (brand && brandFg) {
+      app.MainButton.setParams?.({ color: brand, text_color: brandFg });
+    }
+
     app.onEvent("themeChanged", applyTheme);
     return () => app.offEvent("themeChanged", applyTheme);
   }, []);

@@ -6,6 +6,26 @@
  * app matches whatever theme the user has set in Telegram — and still looks
  * right in a plain browser, where these fallbacks apply.
  */
+/*
+ * Brand palette. Unlike the --tg-* variables below, these are fixed: the
+ * primary action colour stays the same whatever theme the user has set in
+ * Telegram, so the store keeps its own identity.
+ *
+ * #00c44f is bright enough that white text on it only reaches 2.3:1 contrast,
+ * which fails WCAG AA. Buttons therefore use a near-black ink (8.2:1) — the
+ * same approach Spotify takes with its green. --brand-ink is the readable
+ * green for the opposite case: brand-coloured text on a page background.
+ */
+:root {
+  --brand: #00c44f;
+  --brand-fg: #04150a;
+  --brand-ink: #007a31;
+}
+
+:root[data-theme="dark"] {
+  --brand-ink: #22d46a;
+}
+
 :root {
   --tg-bg-color: #ffffff;
   --tg-secondary-bg-color: #f1f2f4;
@@ -31,6 +51,10 @@
 }
 
 @theme inline {
+  --color-brand: var(--brand);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-ink: var(--brand-ink);
+
   --color-tg-bg: var(--tg-bg-color);
   --color-tg-secondary: var(--tg-secondary-bg-color);
   --color-tg-section: var(--tg-section-bg-color);

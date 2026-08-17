@@ -51,7 +51,7 @@ export default function ProductCard({ product }: { product: Product }) {
           type="button"
           onClick={() => add(product)}
           disabled={!product.inStock}
-          className="mt-2 rounded-xl bg-tg-button px-3 py-2 text-[13px] font-semibold text-tg-button-text transition active:scale-[0.97] disabled:opacity-40"
+          className="mt-2 rounded-xl bg-brand px-3 py-2 text-[13px] font-semibold text-brand-fg transition active:scale-[0.97] disabled:opacity-40"
         >
           {qty > 0 ? `In cart (${qty})` : "Add to cart"}
         </button>

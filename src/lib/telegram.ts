@@ -32,6 +32,8 @@ export type TelegramWebApp = {
     setText: (text: string) => void;
     onClick: (cb: () => void) => void;
     offClick: (cb: () => void) => void;
+    /** Not present on older Telegram clients — always feature-detect. */
+    setParams?: (params: { color?: string; text_color?: string; text?: string }) => void;
   };
   onEvent: (event: string, cb: () => void) => void;
   offEvent: (event: string, cb: () => void) => void;
